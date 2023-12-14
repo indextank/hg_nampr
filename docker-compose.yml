@@ -1,0 +1,550 @@
+version: "3.9"
+
+x-common:
+  &default-common
+  restart: always
+  env_file: ./.env
+  dns:
+    - ${DNS:-223.5.5.5}
+
+services:
+
+################   nginx #######################################
+  nginx:
+    << : *default-common
+    container_name: nginx
+    build:
+      context: ./
+      dockerfile: ./build/nginx/Dockerfile
+      args:
+        - ALPINE_REPOSITORIES=${ALPINE_REPOSITORIES}
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+        - NGINX_VERSION=${NGINX_VERSION}
+        - HMNM_VERSION=${HEADERS_MORE_NGINX_MODULE_VERSION}
+        - http_proxy
+        - https_proxy
+        - no_proxy
+    ports:
+      - "${NGINX_HTTP_HOST_PORT}:80"
+      - "${NGINX_HTTPS_HOST_PORT}:443"
+    privileged: true
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${NGINX_VHOST_DIR}:/etc/nginx/conf.d/:rw
+      - ${NGINX_CONF_FILE}:/etc/nginx/nginx.conf:ro
+      - ${NGINX_LOG_DIR}:/var/log/nginx/:rw
+    environment:
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=${WORKSPACE_TIMEZONE}
+    restart: always
+    depends_on:
+      - php83_apache
+      - php82_apache
+      # - php81_apache
+      # - php80_apache
+      - php74_apache
+      # - php72_apache
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 4G
+        reservations:
+           memory: 512M
+    networks:
+      - lnamp_network
+
+  # 如果需要使用tengine,请先注释掉上面的nginx代码，在取消下面的注释即可。
+
+  # tengine:
+  #   << : *default-common
+  #   container_name: tengine
+  #   build:
+  #     context: ./
+  #     dockerfile: ./build/tengine/Dockerfile
+  #     args:
+  #       - ALPINE_REPOSITORIES=${ALPINE_REPOSITORIES}
+  #       - CHANGE_SOURCE=${CHANGE_SOURCE}
+  #       - TENGINE_VERSION=${TENGINE_VERSION}
+  #       - HMNM_VERSION=${HEADERS_MORE_NGINX_MODULE_VERSION}
+  #       - http_proxy
+  #       - https_proxy
+  #       - no_proxy
+  #   ports:
+  #     - "${NGINX_HTTP_HOST_PORT}:80"
+  #     - "${NGINX_HTTPS_HOST_PORT}:443"
+  #   privileged: true
+  #   volumes:
+  #     - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+  #     - ${NGINX_VHOST_DIR}:/etc/nginx/conf.d/:rw
+  #     - ${TENGINE_CONF_FILE}:/etc/nginx/nginx.conf:ro
+  #     - ${NGINX_LOG_DIR}:/var/log/nginx/:rw
+  #   environment:
+  #     - SET_CONTAINER_TIMEZONE=true
+  #     - CONTAINER_TIMEZONE=${WORKSPACE_TIMEZONE}
+  #   restart: always
+  #   depends_on:
+  #     - php83_apache
+  #     - php82_apache
+  #     # - php81_apache
+  #     # - php80_apache
+  #     - php74_apache
+  #     # - php72_apache
+  #   deploy:
+  #    resources:
+  #       limits:
+  #          cpus: '4'
+  #          memory: 4G
+  #       reservations:
+  #          memory: 512M
+  #   networks:
+  #     - lnamp_network
+
+################  php83 #############################
+  php83_apache:
+    << : *default-common
+    container_name: php83_apache
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        SOURCE_LIST: bullseye
+        PHP_VERSION: ${PHP83_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        PHP_EXTENSIONS: ${PHP_COMMON_EXTENSIONS}
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        XDEBUG_EXT_VERSION: ${XDEBUG_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PROTOBUF_EXT_VERSION: ${PROTOBUF_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        IMAGICK_EXT_VERSION: ${IMAGICK_EXT_VERSION}
+        IMAGICK_VERSION: ${IMAGICK_VERSION}
+        MEMCACHED_VERSION: ${MEMCACHED_VERSION}
+        OPENSSL_VERSION: ${OPENSSL_VERSION}
+        CURL_VERSION: ${CURL_VERSION}
+        LIBSODIUM_VERSION: ${LIBSODIUM_VERSION}
+        LIBICONV_VERSION: ${LIBICONV_VERSION}
+        FREETYPE_VERSION: ${FREETYPE_VERSION}
+        YAML_EXT_VERSION: ${YAML_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${APACHE_LOG_DIR}:/etc/apache2/logs/apache/:rw
+      - ${APACHE_VHOST_DIR}:/etc/apache2/sites-enabled/:rw
+      - ${PHP81_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    restart: always
+    networks:
+      - lnamp_network
+
+################  php82 #############################
+  php82_apache:
+    << : *default-common
+    container_name: php82_apache
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        SOURCE_LIST: bullseye
+        PHP_VERSION: ${PHP82_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        PHP_EXTENSIONS: ${PHP_COMMON_EXTENSIONS}
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        XDEBUG_EXT_VERSION: ${XDEBUG_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PROTOBUF_EXT_VERSION: ${PROTOBUF_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        IMAGICK_EXT_VERSION: ${IMAGICK_EXT_VERSION}
+        IMAGICK_VERSION: ${IMAGICK_VERSION}
+        MEMCACHED_VERSION: ${MEMCACHED_VERSION}
+        OPENSSL_VERSION: ${OPENSSL_VERSION}
+        CURL_VERSION: ${CURL_VERSION}
+        LIBSODIUM_VERSION: ${LIBSODIUM_VERSION}
+        LIBICONV_VERSION: ${LIBICONV_VERSION}
+        FREETYPE_VERSION: ${FREETYPE_VERSION}
+        YAML_EXT_VERSION: ${YAML_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${APACHE_LOG_DIR}:/etc/apache2/logs/apache/:rw
+      - ${APACHE_VHOST_DIR}:/etc/apache2/sites-enabled/:rw
+      - ${PHP81_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    restart: always
+    networks:
+      - lnamp_network
+
+################   php81 ###################################
+  php81_apache:
+    << : *default-common
+    container_name: php81_apache
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        SOURCE_LIST: bullseye
+        PHP_VERSION: ${PHP81_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        PHP_EXTENSIONS: ${PHP_COMMON_EXTENSIONS}
+        # MORE_EXTENSION_INSTALLER: php81.sh
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        XDEBUG_EXT_VERSION: ${XDEBUG_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PROTOBUF_EXT_VERSION: ${PROTOBUF_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        IMAGICK_EXT_VERSION: ${IMAGICK_EXT_VERSION}
+        IMAGICK_VERSION: ${IMAGICK_VERSION}
+        MEMCACHED_VERSION: ${MEMCACHED_VERSION}
+        OPENSSL_VERSION: ${OPENSSL_VERSION}
+        CURL_VERSION: ${CURL_VERSION}
+        LIBSODIUM_VERSION: ${LIBSODIUM_VERSION}
+        LIBICONV_VERSION: ${LIBICONV_VERSION}
+        FREETYPE_VERSION: ${FREETYPE_VERSION}
+        YAML_EXT_VERSION: ${YAML_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${APACHE_LOG_DIR}:/etc/apache2/logs/apache/:rw
+      - ${APACHE_VHOST_DIR}:/etc/apache2/sites-enabled/:rw
+      - ${PHP81_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    restart: always
+    networks:
+      - lnamp_network
+
+################   php80 ############################
+  php80_apache:
+    << : *default-common
+    container_name: php80_apache
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        SOURCE_LIST: bullseye
+        PHP_VERSION: ${PHP80_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        PHP_EXTENSIONS: ${PHP_COMMON_EXTENSIONS}
+        # MORE_EXTENSION_INSTALLER: php80.sh
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        XDEBUG_EXT_VERSION: ${XDEBUG_EXT_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PROTOBUF_EXT_VERSION: ${PROTOBUF_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        IMAGICK_EXT_VERSION: ${IMAGICK_EXT_VERSION}
+        IMAGICK_VERSION: ${IMAGICK_VERSION}
+        MEMCACHED_VERSION: ${MEMCACHED_VERSION}
+        OPENSSL_VERSION: ${OPENSSL_VERSION}
+        CURL_VERSION: ${CURL_VERSION}
+        LIBSODIUM_VERSION: ${LIBSODIUM_VERSION}
+        LIBICONV_VERSION: ${LIBICONV_VERSION}
+        FREETYPE_VERSION: ${FREETYPE_VERSION}
+        YAML_EXT_VERSION: ${YAML_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${APACHE_LOG_DIR}:/etc/apache2/logs/apache/:rw
+      - ${APACHE_VHOST_DIR}:/etc/apache2/sites-enabled/:rw
+      - ${PHP80_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    restart: always
+    networks:
+      - lnamp_network
+
+################   php74 ##############################
+  php74_apache:
+    << : *default-common
+    container_name: php74_apache
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        SOURCE_LIST: bullseye
+        PHP_VERSION: ${PHP74_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        PHP_EXTENSIONS: ${PHP_COMMON_EXTENSIONS}
+        # MORE_EXTENSION_INSTALLER: php74.sh
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        SWOOLE_EXT_VERSION: ${SWOOLE_EXT_VERSION}
+        XDEBUG_EXT_VERSION: ${XDEBUG_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PROTOBUF_EXT_VERSION: ${PROTOBUF_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        IMAGICK_EXT_VERSION: ${IMAGICK_EXT_VERSION}
+        IMAGICK_VERSION: ${IMAGICK_VERSION}
+        MEMCACHED_VERSION: ${MEMCACHED_VERSION}
+        OPENSSL_VERSION: ${OPENSSL_VERSION}
+        CURL_VERSION: ${CURL_VERSION}
+        LIBSODIUM_VERSION: ${LIBSODIUM_VERSION}
+        LIBICONV_VERSION: ${LIBICONV_VERSION}
+        FREETYPE_VERSION: ${FREETYPE_VERSION}
+        YAML_EXT_VERSION: ${YAML_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${APACHE_LOG_DIR}:/etc/apache2/logs/apache/:rw
+      - ${APACHE_VHOST_DIR}:/etc/apache2/sites-enabled/:rw
+      - ${PHP74_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    restart: always
+    networks:
+      - lnamp_network
+
+################   php72 ##############################
+  php72_apache:
+    << : *default-common
+    container_name: php72_apache
+    build:
+      context: ./
+      dockerfile: ./build/php/Dockerfile
+      args:
+        SOURCE_LIST: bullseye
+        PHP_VERSION: ${PHP72_VERSION}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        PHP_EXTENSIONS: ${PHP_COMMON_EXTENSIONS}
+        # MORE_EXTENSION_INSTALLER: php72.sh
+        LIBWEBP_VERSION: ${LIBWEBP_VERSION}
+        XDEBUG_EXT_VERSION: ${XDEBUG_EXT_VERSION}
+        GRPC_EXT_VERSION: ${GRPC_EXT_VERSION}
+        REDIS_EXT_VERSION: ${REDIS_EXT_VERSION}
+        LIBRDKAFKA_VERSION: ${LIBRDKAFKA_VERSION}
+        RDKAFKA_EXT_VERSION: ${RDKAFKA_EXT_VERSION}
+        ZOOKEEPER_VERSION: ${ZOOKEEPER_VERSION}
+        ZOOKEEPER_EXT_VERSION: ${ZOOKEEPER_EXT_VERSION}
+        PROTOBUF_VERSION: ${PROTOBUF_VERSION}
+        PROTOBUF_EXT_VERSION: ${PROTOBUF_EXT_VERSION}
+        MONGODB_EXT_VERSION: ${MONGODB_EXT_VERSION}
+        IMAGICK_EXT_VERSION: ${IMAGICK_EXT_VERSION}
+        IMAGICK_VERSION: ${IMAGICK_VERSION}
+        MEMCACHED_VERSION: ${MEMCACHED_VERSION}
+        OPENSSL_VERSION: ${OPENSSL_VERSION}
+        CURL_VERSION: ${CURL_VERSION}
+        LIBSODIUM_VERSION: ${LIBSODIUM_VERSION}
+        LIBICONV_VERSION: ${LIBICONV_VERSION}
+        FREETYPE_VERSION: ${FREETYPE_VERSION}
+        YAML_EXT_VERSION: ${YAML_EXT_VERSION}
+    volumes:
+      - ${GLOBAL_WEB_PATH}:/var/www/html/:rw
+      - ${APACHE_LOG_DIR}:/etc/apache2/logs/apache/:rw
+      - ${APACHE_VHOST_DIR}:/etc/apache2/sites-enabled/:rw
+      - ${PHP72_PHP_CONF_FILE}:/usr/local/etc/php/php.ini:ro
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    restart: always
+    networks:
+      - lnamp_network
+
+################  MySQL ########################
+
+# 采用官方二进制安装包安装，可根据需要选择安装指定版本的mysql;
+# 可有效避免docker仓库通过apt直接安装因网络问题key无法下载问题。
+# 采用该方式，会导致images文件大小会偏大一点
+  mysql:
+    << : *default-common
+    container_name: mysql8
+    security_opt: # docker安全验证
+      - seccomp:unconfined
+    build:
+      context: ./
+      dockerfile: ./build/mysql/Dockerfile
+      args:
+        - MYSQL_VER=${MYSQL_VERSION}
+        - GOSU_VERSION=${GOSU_VERSION}
+        - MYSQL_DATA_DIR=${MYSQL_DATA_DIR}
+        - CHANGE_SOURCE=${CHANGE_SOURCE}
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-connect='SET NAMES utf8mb4;' --innodb-flush-log-at-trx-commit=0
+    environment:
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - TZ=${WORKSPACE_TIMEZONE}
+      # - MYSQL_ALLOW_EMPTY_PASSWORD="true"
+    volumes:
+      - ${MYSQL_DATA_DIR}:/var/lib/mysql/
+      #- ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/docker.cnf:ro
+      - ${MYSQL_CONF_FILE}:/etc/my.cnf:ro
+      - ${MYSQL_LOG_DIR}:/var/log/mysql
+    ports:
+      - "${MYSQL_HOST_PORT}:3306"
+    restart: always
+    networks:
+      - lnamp_network
+    deploy:
+     resources:
+        limits:
+           cpus: '8'
+           memory: 16G
+        reservations:
+           memory: 4G
+    platform: linux/x86_64
+
+  # mysql8:
+  #   << : *default-common
+  #   container_name: mysql
+  #   security_opt: # docker安全验证
+  #     - seccomp:unconfined
+  #   build:
+  #     context: ./
+  #     dockerfile: ./build/mysql/Dockerfile_gf
+  #     args:
+  #       - MYSQL_VER=${MYSQL_VERSION}
+  #       - GOSU_VERSION=${GOSU_VERSION}
+  #       - CHANGE_SOURCE=${CHANGE_SOURCE}
+  #   command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --init-connect='SET NAMES utf8mb4;' --innodb-flush-log-at-trx-commit=0
+  #   environment:
+  #     - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+  #     - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+  #     - TZ=${WORKSPACE_TIMEZONE}
+  #     # - MYSQL_ALLOW_EMPTY_PASSWORD="true"
+  #   volumes:
+  #     - ${MYSQL_DATA_DIR}:/var/lib/mysql/
+  #     #- ${MYSQL_CONF_FILE}:/etc/mysql/conf.d/docker.cnf:ro
+  #     - ${MYSQL_CONF_FILE}:/etc/mysql/my.cnf:ro
+  #     - ${MYSQL_LOG_DIR}:/var/log/mysql
+  #   ports:
+  #     - "${MYSQL_HOST_PORT}:3306"
+  #   restart: always
+  #   networks:
+  #     - lnamp_network
+  #   deploy:
+  #    resources:
+  #       limits:
+  #          cpus: '8'
+  #          memory: 16G
+  #       reservations:
+  #          memory: 4G
+  #   platform: linux/x86_64
+
+################  redis ########################
+  redis:
+    << : *default-common
+    container_name: redis
+    build:
+      context: ./
+      dockerfile: ./build/redis/Dockerfile
+      args:
+        ALPINE_REPOSITORIES: ${ALPINE_REPOSITORIES}
+        CHANGE_SOURCE: ${CHANGE_SOURCE}
+        REDIS_VERSION: ${REDIS_VERSION}
+    ports:
+      - "${REDIS_HOST_PORT}:6379"
+    environment:
+      TZ: ${WORKSPACE_TIMEZONE}
+    volumes:
+      # - ${DATA_PATH_HOST}/redis:/data
+      - ${REDIS_CONF_FILE}:/etc/redis.conf:ro
+      - ${REDIS_LOG_DIR}:/var/log/redis/:rw
+    entrypoint: ["redis-server", "/etc/redis.conf"]
+    deploy:
+     resources:
+        limits:
+           cpus: '4'
+           memory: 2G
+        reservations:
+           memory: 256M
+    networks:
+      - lnamp_network
+    sysctls:
+      - net.core.somaxconn=1024
+
+
+################   mongo ########################
+  mongo:
+    << : *default-common
+    container_name: mongo
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    ports:
+      - "${MONGO_HOST_PORT}:27017"
+    volumes:
+      - ${MONGO_DATA_DB_DIR}:/data/db:rw
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 16G
+        reservations:
+          memory: 1G
+    networks:
+      - lnamp_network
+
+networks:
+  lnamp_network:
+    driver: bridge
